@@ -6,9 +6,7 @@ I spent a few weeks putting this Lightsaber together for Unity. The asset store 
 
 The blade is fully volumetric, with a nice rim shader. The glow is almost volumetric except when the weapon is pointed right at the camera. Still need to figure that one out.
 
-Here is a demo video:
-
-[YouTubeDemo](https://https://youtu.be/qfCQdwYs23I)
+[Here is a demo video](https://youtu.be/qfCQdwYs23I)
 
 Jeff Johnson
 
