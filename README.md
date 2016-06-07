@@ -8,7 +8,7 @@ The blade is fully volumetric, with a nice rim shader. The glow is almost volume
 
 Here is a demo video:
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/qfCQdwYs23I" frameborder="0" allowfullscreen></iframe>
+[YouTubeDemo](https://https://youtu.be/qfCQdwYs23I)
 
 Jeff Johnson
 
