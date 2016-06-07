@@ -8,6 +8,7 @@ The blade is fully volumetric, with a nice rim shader. The glow is almost volume
 
 [Here is a demo video](https://youtu.be/qfCQdwYs23I)
 
+Screenshot:
 ![Lightsaber for Unity Screenshot](https://www.digitalruby.com/wp-content/uploads/2015/04/VolumetricLightsaber.jpg)
 
 Jeff Johnson
