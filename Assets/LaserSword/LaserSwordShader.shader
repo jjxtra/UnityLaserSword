@@ -1,4 +1,4 @@
-﻿// Lightsabre for Unity
+﻿// Laser Sword for Unity
 // (c) 2016 Digital Ruby, LLC
 // http://www.digitalruby.com
 
@@ -65,7 +65,7 @@ Shader "LaserSword/LaserSwordShader"
 				o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
 				o.viewPos = normalize(mul(UNITY_MATRIX_MV, v.vertex).xyz);
 				o.normal = mul((float3x3)UNITY_MATRIX_MV, -v.normal);
-				o.worldPos = mul(_Object2World, v.vertex);
+				o.worldPos = mul(unity_ObjectToWorld, v.vertex);
 				return o;
 			}
 

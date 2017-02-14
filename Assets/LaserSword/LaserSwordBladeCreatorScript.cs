@@ -234,7 +234,7 @@ namespace DigitalRuby.LaserSword
             mesh.uv = uvs;
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
-            mesh.Optimize();
+            ;
             BladeHeight = bladeHeight;
 
             return mesh;
@@ -261,7 +261,7 @@ namespace DigitalRuby.LaserSword
             mesh.uv = uvs;
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
-            mesh.Optimize();
+            ;
 
             BladeHeight = bladeHeight;
             BottomRadius = bottomRadius;
@@ -290,7 +290,7 @@ namespace DigitalRuby.LaserSword
                 c2.transform = Matrix4x4.TRS(new Vector3(0.0f, BladeHeight - (BladeHeight * BladeTipPercent), 0.0f), Quaternion.identity, Vector3.one);
                 bladeMesh.CombineMeshes(new CombineInstance[] { c1, c2 }, true, true);
                 bladeMesh.RecalculateBounds();
-                bladeMesh.Optimize();
+                ;
             }
             {
                 MeshCollider c = MeshFilter.gameObject.GetComponent<MeshCollider>();
