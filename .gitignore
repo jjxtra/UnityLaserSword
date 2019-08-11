@@ -1,7 +1,10 @@
 Library
 Temp
+Obj
+Logs
 *.csproj
 *.user
 *.sln
 *.suo
 .vs
+AssetStoreTools

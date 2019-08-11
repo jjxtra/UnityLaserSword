@@ -60,11 +60,11 @@ Shader "LaserSword/LaserSwordShader"
 			{
 				v2f o;
 
-				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.color = v.color;
 				o.texcoord = TRANSFORM_TEX(v.texcoord, _MainTex);
-				o.viewPos = normalize(mul(UNITY_MATRIX_MV, v.vertex).xyz);
-				o.normal = mul((float3x3)UNITY_MATRIX_MV, -v.normal);
+				o.viewPos = normalize(UnityObjectToViewPos(v.vertex).xyz);
+				o.normal = UnityObjectToViewPos(-v.normal);
 				o.worldPos = mul(unity_ObjectToWorld, v.vertex);
 				return o;
 			}
