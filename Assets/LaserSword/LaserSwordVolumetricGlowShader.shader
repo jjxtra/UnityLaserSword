@@ -8,6 +8,7 @@
 		[PerRendererData] _CapsuleScale("Scale", Vector) = (1.0, 1.0, 1.0, 1.0)
 		[PerRendererData] _CapsuleRoundness("Roundness", Range(0.0, 1.0)) = 0.5
 		[PerRendererData] _GlowIntensity("Intensity", Range(0.0, 10.0)) = 3.0
+		[PerRendererData] _GlowPower("Glow Power", Range(0.0, 8.0)) = 3.0
 		[PerRendererData] _MaxGlow("Max Glow", Range(0.0, 1.0)) = 1.0
 	}
 		SubShader
@@ -33,12 +34,18 @@
 			uniform float3 _CapsuleScale;
 			uniform float _CapsuleRoundness;
 			uniform fixed _GlowIntensity;
+			uniform fixed _GlowPower;
 			uniform fixed _MaxGlow;
 			
+#define CAPSULE_RAY_MARCH_COUNT 4
+#define CAPSULE_RAY_MARCH_COUNT_INV (1.0 / float(CAPSULE_RAY_MARCH_COUNT))
+#define CAPSULE_RADIUS_MULTIPLIER 0.35
+#define CAPSULE_LENGTH_MULTIPLIER 1.15
+#define CAPSULE_LENGTH_POWER 0.5
 #define _InvFade 0.01
 
-			static const float capsuleRadius = _CapsuleScale.x * 0.35;
-			static const float capsuleLength = _CapsuleScale.y * 1.15;
+			static const float capsuleRadius = _CapsuleScale.x * CAPSULE_RADIUS_MULTIPLIER;
+			static const float capsuleLength = _CapsuleScale.y * CAPSULE_LENGTH_MULTIPLIER;
 			static const float3 capsuleDir = normalize(_CapsuleEnd - _CapsuleStart);
 			static const float3 capsuleCenter = (_CapsuleEnd + _CapsuleStart) * 0.5;
 
@@ -154,19 +161,19 @@
 				float3 rayStart = _WorldSpaceCameraPos + (intersect * i.rayDir);
 				float3 rayEnd = i.worldPos;
 				intersect = distance(rayStart, rayEnd);
-				float3 rayMarch = (rayEnd - rayStart) * 0.1;
+				float3 rayMarch = (rayEnd - rayStart) * CAPSULE_RAY_MARCH_COUNT_INV;
 				float dist = 0.0;
 
 				// ray march through glow volume
 				UNITY_LOOP
-				for (uint i = 0; i < 10; i++)
+				for (uint i = 0; i < CAPSULE_RAY_MARCH_COUNT; i++)
 				{
 					dist += saturate((capsuleRadius - LinePointDistanceSquared(_CapsuleStart, capsuleDir, rayStart)) *
-						pow((capsuleLength - distance(rayStart, capsuleCenter)), 0.5));
+						pow((capsuleLength - distance(rayStart, capsuleCenter)), CAPSULE_LENGTH_POWER));
 					rayStart += rayMarch;
 				}
-				dist *= 0.1;
-				dist = (dist * dist * dist);
+				dist *= CAPSULE_RAY_MARCH_COUNT_INV;
+				dist = pow(dist, _GlowPower);
 
 #if defined(SOFTPARTICLES_ON)
 

@@ -28,6 +28,10 @@ namespace DigitalRuby.LaserSword
         [Range(0.0f, 100.0f)]
         public float GlowIntensity = 3.0f;
 
+        [Tooltip("Glow power")]
+        [Range(0.0f, 8.0f)]
+        public float GlowPower = 3.0f;
+
         [Tooltip("Glow scale / width")]
         [Range(0.0f, 2.0f)]
         public float GlowScale = 1.0f;
@@ -115,6 +119,7 @@ namespace DigitalRuby.LaserSword
             glowBlock.SetVector("_CapsuleEnd", BladeEnd.transform.position);
             glowBlock.SetVector("_CapsuleScale", BladeGlow.transform.lossyScale);
             glowBlock.SetFloat("_GlowIntensity", GlowIntensity);
+            glowBlock.SetFloat("_GlowPower", GlowPower);
             glowBlock.SetFloat("_MaxGlow", 1.0f);
             BladeGlow.SetPropertyBlock(glowBlock);
             BladeGlow.transform.position = BladeStart.transform.position + ((BladeEnd.transform.position - BladeStart.transform.position) * 0.5f);
