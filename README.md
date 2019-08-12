@@ -6,7 +6,8 @@ I spent a few weeks putting this laser sword together for Unity. The asset store
 
 The blade is fully volumetric (including glow), with a nice rim shader.
 
-[Here is a demo video](https://youtu.be/qfCQdwYs23I)
+Demo Video:  
+[![Alt text](https://img.youtube.com/vi/qfCQdwYs23I/0.jpg)](https://www.youtube.com/watch?v=qfCQdwYs23I)
 
 Screenshot:
 
