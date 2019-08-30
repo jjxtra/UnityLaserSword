@@ -27,14 +27,17 @@ How to create your own laser sword:
 2] Change the hilt position, rotation and scale to be appropriate for your model.
 3] Change the blade height to be appropriate for your usage.
 4] Change the start and end radius of the blade to your liking.
-5] Swap out the material on the LaserSwordBlade to change colors.
+5] Swap out the mesh renderer material on the LaserSwordBlade (LaserSwordRoot -> LaserSwordHilt -> LaserSwordBlade) to change colors.
 6] The LaserSwordBlade object uses a custom shader, so you probably just want to copy an existing material, such as LaserSwordBladeWhiteMaterial, change the texture and tint colors, and use that.
 7] The LaserSwordBladeGlow object uses volumetric glow with a capsule.
-8] Change the audio clips for on/off/constant to your own if you like.
+8] Change the audio clips on LaserSwordScript for on/off/constant to your own if you like.
 9] Set the BladeStart object to the top of your hilt, right where you want the blade to come out.
 10] There is no need to set BladeEnd, it is calculated automatically based off of the blade height.
 11] Change the color of the LaserSwordLight object if you want. The glow color will match.
 12] The rim color changes the color towards the edges of the weapon. For best results, keep this somewhat similar to the regular tint color.
+
+Rotation:
+Set all rotation values to 0 on LaserSwordScript to disable the demo rotation.
 
 Anti-Aliasing:
 If you are using deferred rendering, you should import the anti-aliasing script from the standard effects package, plust anti-aliasing shaders and add the script to your camera. For forward rendering, be sure you enable anti-aliasing for better looking edges on the weapon.
