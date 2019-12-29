@@ -1,6 +1,6 @@
-Unity Laser Sword - Volumetric Laser Sword in Unity.
-by Jeff Johnson (jjxtra)
-http://www.digitalruby.com
+Unity Laser Sword - Volumetric Laser Sword in Unity.  
+by Jeff Johnson (jjxtra)  
+http://www.digitalruby.com  
 
 I made every effort to get this on the asset store but it was denied multiple times, even though other "laser sword" assets made it on the store somehow. I love the consistency there...
 
