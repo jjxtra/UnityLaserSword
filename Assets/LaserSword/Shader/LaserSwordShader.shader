@@ -6,11 +6,11 @@ Shader "LaserSword/LaserSwordShader"
 {
 	Properties
 	{
-		_MainTex("Main Texture", 2D) = "white" {}
-		_TintColor ("Tint Color", Color) = (1, 1, 1, 1)
-		_RimColor("Rim Color", Color) = (1,1,1,1)
-		_RimPower("Rim Power", Float) = 1
-		_Intensity("Intensity", Float) = 1
+		[PerRendererData] _MainTex("Main Texture", 2D) = "white" {}
+		[PerRendererData] _TintColor ("Tint Color", Color) = (1, 1, 1, 1)
+		[PerRendererData] _RimColor("Rim Color", Color) = (1, 1, 1, 1)
+		[PerRendererData] _RimPower("Rim Power", Float) = 1
+		[PerRendererData] _Intensity("Intensity", Float) = 1
 	}
 
 	SubShader

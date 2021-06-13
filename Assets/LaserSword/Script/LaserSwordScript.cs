@@ -9,8 +9,8 @@ namespace DigitalRuby.LaserSword
 {
     public class LaserSwordScript : MonoBehaviour
     {
-        [Tooltip("For demo purposes, rotates the blade continously.")]
-        public Vector3 RotationSpeed = new Vector3(20.0f, 175.0f, 150.0f);
+        [Tooltip("Laser sword profile")]
+        public LaserSwordProfileScript Profile;
 
         [Tooltip("Root game object.")]
         public GameObject Root;
@@ -18,23 +18,11 @@ namespace DigitalRuby.LaserSword
         [Tooltip("Hilt game object.")]
         public GameObject Hilt;
 
-        [Tooltip("Blade game object.")]
-        public GameObject Blade;
+        [Tooltip("Blade sword renderer.")]
+        public MeshRenderer BladeSwordRenderer;
 
-        [Tooltip("Blade glow game object.")]
-        public MeshRenderer BladeGlow;
-
-        [Tooltip("Glow intensity")]
-        [Range(0.0f, 100.0f)]
-        public float GlowIntensity = 3.0f;
-
-        [Tooltip("Glow power")]
-        [Range(0.0f, 8.0f)]
-        public float GlowPower = 3.0f;
-
-        [Tooltip("Glow scale / width")]
-        [Range(0.0f, 2.0f)]
-        public float GlowScale = 1.0f;
+        [Tooltip("Blade glow renderer.")]
+        public MeshRenderer BladeGlowRenderer;
 
         [Tooltip("Light game object.")]
         public Light Light;
@@ -44,18 +32,6 @@ namespace DigitalRuby.LaserSword
 
         [Tooltip("Audio source for looping.")]
         public AudioSource AudioSourceLoop;
-
-        [Tooltip("How long it takes to turn the laser sword on and off")]
-        public float ActivationTime = 0.5f;
-
-        [Tooltip("Sound to play when the laser sword turns on")]
-        public AudioClip StartSound;
-
-        [Tooltip("Sound to play when the laser sword turns off")]
-        public AudioClip StopSound;
-
-        [Tooltip("Sound to play when the laser sword stays on")]
-        public AudioClip ConstantSound;
 
         [Tooltip("Blade start")]
         public GameObject BladeStart;
@@ -70,6 +46,7 @@ namespace DigitalRuby.LaserSword
         private float bladeDir; // 1 = up, -1 = down
         private float bladeTime;
         private float bladeIntensity;
+        private MaterialPropertyBlock swordBlock;
         private MaterialPropertyBlock glowBlock;
 
         private void CheckState()
@@ -77,12 +54,12 @@ namespace DigitalRuby.LaserSword
             if (state == 2 || state == 3)
             {
                 bladeTime += Time.deltaTime;
-                float percent = Mathf.Lerp(0.01f, 1.0f, bladeTime / ActivationTime);
+                float percent = Mathf.Lerp(0.01f, 1.0f, bladeTime / Profile.ActivationTime);
                 Vector3 end = temporaryBladeStart.transform.position + (Root.transform.up * bladeDir * percent * creationScript.BladeHeight);
                 BladeEnd.transform.position = end;
                 bladeIntensity = (state == 3 ? percent : (1.0f - percent));
 
-                if (bladeTime >= ActivationTime)
+                if (bladeTime >= Profile.ActivationTime)
                 {
                     GameObject.Destroy(temporaryBladeStart);
                     bladeTime = 0.0f;
@@ -102,34 +79,50 @@ namespace DigitalRuby.LaserSword
         {
             float distance = Vector3.Distance(BladeEnd.transform.position, BladeStart.transform.position);
             float percent = distance / creationScript.BladeHeight;
-            Blade.transform.localScale = new Vector3(1.0f, percent, 1.0f);
+            BladeSwordRenderer.transform.localScale = new Vector3(1.0f, percent, 1.0f);
             if (percent < 0.01f)
             {
-                Blade.SetActive(false);
-                BladeGlow.gameObject.SetActive(false);
+                BladeSwordRenderer.gameObject.SetActive(false);
+                BladeGlowRenderer.gameObject.SetActive(false);
             }
             else
             {
-                Blade.SetActive(true);
-                BladeGlow.gameObject.SetActive(true);
+                BladeSwordRenderer.gameObject.SetActive(true);
+                BladeGlowRenderer.gameObject.SetActive(true);
             }
-            BladeGlow.GetPropertyBlock(glowBlock);
-            glowBlock.SetColor("_Color", new Color(Light.color.r, Light.color.g, Light.color.b, bladeIntensity));
+            BladeSwordRenderer.GetPropertyBlock(swordBlock);
+            if (Profile.BladeTexture != null)
+            {
+                swordBlock.SetTexture("_MainTex", Profile.BladeTexture);
+            }
+            swordBlock.SetColor("_TintColor", Profile.BladeColor);
+            swordBlock.SetColor("_RimColor", Profile.BladeRimColor);
+            swordBlock.SetFloat("_RimPower", Profile.BladeRimPower);
+            swordBlock.SetFloat("_Intensity", Profile.BladeIntensity * percent);
+            BladeSwordRenderer.SetPropertyBlock(swordBlock);
+
+            BladeGlowRenderer.GetPropertyBlock(glowBlock);
+            glowBlock.SetColor("_Color", Profile.GlowColor * bladeIntensity);
             glowBlock.SetVector("_CapsuleStart", BladeStart.transform.position);
             glowBlock.SetVector("_CapsuleEnd", BladeEnd.transform.position);
-            glowBlock.SetVector("_CapsuleScale", BladeGlow.transform.lossyScale);
-            glowBlock.SetFloat("_GlowIntensity", GlowIntensity);
-            glowBlock.SetFloat("_GlowPower", GlowPower);
-            glowBlock.SetFloat("_MaxGlow", 1.0f);
-            BladeGlow.SetPropertyBlock(glowBlock);
-            BladeGlow.transform.position = BladeStart.transform.position + ((BladeEnd.transform.position - BladeStart.transform.position) * 0.5f);
-            BladeGlow.transform.up = (BladeEnd.transform.position - BladeStart.transform.position).normalized;
-            BladeGlow.transform.localScale = new Vector3(GlowScale, (BladeEnd.transform.position - BladeStart.transform.position).magnitude * 0.5f, GlowScale);
+            glowBlock.SetVector("_CapsuleScale", BladeGlowRenderer.transform.lossyScale);
+            glowBlock.SetFloat("_GlowIntensity", Profile.GlowIntensity);
+            glowBlock.SetFloat("_GlowPower", Profile.GlowPower);
+            glowBlock.SetFloat("_GlowFade", Profile.GlowFade);
+            glowBlock.SetFloat("_GlowLengthPower", Profile.GlowLengthPower);
+            glowBlock.SetFloat("_GlowDither", Profile.GlowDither);
+            glowBlock.SetFloat("_GlowMaxRayLength", Profile.GlowMaxRayLength);
+            glowBlock.SetFloat("_GlowMax", Profile.GlowMax);
+            BladeGlowRenderer.SetPropertyBlock(glowBlock);
+            BladeGlowRenderer.transform.position = BladeStart.transform.position + ((BladeEnd.transform.position - BladeStart.transform.position) * 0.5f);
+            BladeGlowRenderer.transform.up = (BladeEnd.transform.position - BladeStart.transform.position).normalized;
+            BladeGlowRenderer.transform.localScale = new Vector3(Profile.GlowScale, (BladeEnd.transform.position - BladeStart.transform.position).magnitude * 0.5f, Profile.GlowScale);
             Light.intensity = percent;
         }
 
         private void Start()
         {
+            swordBlock = new MaterialPropertyBlock();
             glowBlock = new MaterialPropertyBlock();
             creationScript = GetComponent<LaserSwordBladeCreatorScript>();
             BladeEnd.transform.position = BladeStart.transform.position;
@@ -137,7 +130,7 @@ namespace DigitalRuby.LaserSword
 
         private void Update()
         {
-            Root.transform.Rotate(RotationSpeed * Time.deltaTime);
+            Root.transform.Rotate(Profile.RotationSpeed * Time.deltaTime);
             CheckState();
             UpdateBlade();
         }
@@ -162,15 +155,15 @@ namespace DigitalRuby.LaserSword
             {
                 bladeDir = 1.0f;
                 state = 3;
-                AudioSource.PlayOneShot(StartSound);
-                AudioSourceLoop.clip = ConstantSound;
+                AudioSource.PlayOneShot(Profile.StartSound);
+                AudioSourceLoop.clip = Profile.ConstantSound;
                 AudioSourceLoop.Play();
             }
             else
             {
                 bladeDir = -1.0f;
                 state = 2;
-                AudioSource.PlayOneShot(StopSound);
+                AudioSource.PlayOneShot(Profile.StopSound);
                 AudioSourceLoop.Stop();
             }
 

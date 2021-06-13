@@ -8,8 +8,12 @@
 		[PerRendererData] _CapsuleScale("Scale", Vector) = (1.0, 1.0, 1.0, 1.0)
 		[PerRendererData] _CapsuleRoundness("Roundness", Range(0.0, 1.0)) = 0.5
 		[PerRendererData] _GlowIntensity("Intensity", Range(0.0, 10.0)) = 3.0
-		[PerRendererData] _GlowPower("Glow Power", Range(0.0, 8.0)) = 3.0
-		[PerRendererData] _MaxGlow("Max Glow", Range(0.0, 1.0)) = 1.0
+		[PerRendererData] _GlowPower("Glow Power", Range(0.0, 8.0)) = 1.5
+		[PerRendererData] _GlowFade("Glow Fade", Range(0.0, 4.0)) = 2.0
+		[PerRendererData] _GlowLengthPower("Glow Length Power", Range(0.0, 3.0)) = 0.35
+		[PerRendererData] _GlowDither("Glow Power", Range(0.0, 1.0)) = 0.1
+		[PerRendererData] _GlowMaxRayLength("Glow Power", Range(0.0, 10.0)) = 1.5
+		[PerRendererData] _GlowMax("Max Glow", Range(0.0, 3.0)) = 1.0
 	}
 		SubShader
 	{
@@ -35,13 +39,16 @@
 			uniform float _CapsuleRoundness;
 			uniform fixed _GlowIntensity;
 			uniform fixed _GlowPower;
-			uniform fixed _MaxGlow;
+			uniform fixed _GlowFade;
+			uniform fixed _GlowLengthPower;
+			uniform fixed _GlowDither;
+			uniform fixed _GlowMaxRayLength;
+			uniform fixed _GlowMax;
 			
 #define CAPSULE_RAY_MARCH_COUNT 4
 #define CAPSULE_RAY_MARCH_COUNT_INV (1.0 / float(CAPSULE_RAY_MARCH_COUNT))
 #define CAPSULE_RADIUS_MULTIPLIER 0.35
-#define CAPSULE_LENGTH_MULTIPLIER 1.15
-#define CAPSULE_LENGTH_POWER 0.5
+#define CAPSULE_LENGTH_MULTIPLIER 1.5
 #define _InvFade 0.01
 
 			static const float capsuleRadius = _CapsuleScale.x * CAPSULE_RADIUS_MULTIPLIER;
@@ -116,7 +123,13 @@
 				return -1.0;
 			}
 
-			inline float LinePointDistanceSquared(float3 lineStart, float3 lineDir, float3 p)
+			inline float RandomFloat(float3 v)
+			{
+				return (frac(frac(dot(v.xyz, float3(12.9898, 78.233, 45.5432))) * 43758.5453) - 0.5) * 2.0;
+				//return frac(sin(dot(v.xyz, float3(12.9898, 78.233, 45.5432))) * 43758.5453);
+			}
+
+			inline float3 LinePointDistance3(float3 lineStart, float3 lineDir, float3 p)
 			{
 				// http://wiki.unity3d.com/index.php?title=3d_Math_functions
 
@@ -132,8 +145,19 @@
 				// distance from point to line point
 				onLine = onLine - p;
 
-				// return squared distance
-				return dot(onLine, onLine);
+				return onLine;
+			}
+
+			inline float LinePointDistance(float3 lineStart, float3 lineDir, float3 p)
+			{
+				float3 lp = LinePointDistance3(lineStart, lineDir, p);
+				return length(lp);
+			}
+
+			inline float LinePointDistanceSquared(float3 lineStart, float3 lineDir, float3 p)
+			{
+				float3 lp = LinePointDistance3(lineStart, lineDir, p);
+				return dot(lp, lp);
 			}
 
             v2f vert(appdata_vert v)
@@ -160,7 +184,7 @@
 				float intersect = CapsuleIntersect(_WorldSpaceCameraPos, i.rayDir, _CapsuleStart, _CapsuleEnd, _CapsuleRoundness);
 				float3 rayStart = _WorldSpaceCameraPos + (intersect * i.rayDir);
 				float3 rayEnd = i.worldPos;
-				intersect = distance(rayStart, rayEnd);
+				intersect = min(_GlowMaxRayLength, distance(rayStart, rayEnd));
 				float3 rayMarch = (rayEnd - rayStart) * CAPSULE_RAY_MARCH_COUNT_INV;
 				float dist = 0.0;
 
@@ -168,9 +192,11 @@
 				UNITY_LOOP
 				for (uint i = 0; i < CAPSULE_RAY_MARCH_COUNT; i++)
 				{
-					dist += saturate((capsuleRadius - LinePointDistanceSquared(_CapsuleStart, capsuleDir, rayStart)) *
-						pow((capsuleLength - distance(rayStart, capsuleCenter)), CAPSULE_LENGTH_POWER));
-					rayStart += rayMarch;
+					fixed dither = (1.0 + (_GlowDither * RandomFloat(rayStart)));
+					fixed distanceFromCenterLineSquared = LinePointDistanceSquared(_CapsuleStart, capsuleDir, rayStart);
+					fixed lenPower = pow((capsuleLength - distance(rayStart, capsuleCenter)), _GlowLengthPower);
+					dist += saturate(dither * (capsuleRadius - distanceFromCenterLineSquared) * lenPower);
+					rayStart += (rayMarch * dither);
 				}
 				dist *= CAPSULE_RAY_MARCH_COUNT_INV;
 				dist = pow(dist, _GlowPower);
@@ -183,8 +209,9 @@
 
 #endif
 
-				intersect = min(_MaxGlow, intersect * dist * _GlowIntensity);
-				return fixed4(intersect * _Color.r, intersect * _Color.g, intersect * _Color.b, intersect);
+				intersect = min(_GlowMax, intersect * dist * _GlowIntensity);
+				intersect = pow(intersect, _GlowFade);
+				return fixed4(_Color * intersect, 1.0);
             }
             ENDCG
         }
