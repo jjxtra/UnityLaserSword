@@ -12,23 +12,27 @@ namespace DigitalRuby.LaserSword
         [Tooltip("Blade color")]
         public Color BladeColor = Color.magenta;
 
+        [Range(0.0f, 10.0f)]
+        [Tooltip("Blade intensity")]
+        public float BladeIntensity = 1.0f;
+
         [Tooltip("Blade rim color")]
         public Color BladeRimColor = Color.white;
 
-        [Range(0.0f, 3.0f)]
+        [Range(0.0f, 8.0f)]
         [Tooltip("Blade rim power")]
-        public float BladeRimPower = 1.0f;
+        public float BladeRimPower = 2.0f;
 
-        [Range(0.0f, 3.0f)]
-        [Tooltip("Blade intensity")]
-        public float BladeIntensity = 1.0f;
+        [Range(0.0f, 10.0f)]
+        [Tooltip("Blade rim intensity")]
+        public float BladeRimIntensity = 1.0f;
 
         [Header("Glow")]
         [Tooltip("Laser sword glow color")]
         public Color GlowColor = Color.red;
 
         [Tooltip("Glow intensity")]
-        [Range(0.0f, 100.0f)]
+        [Range(0.0f, 10.0f)]
         public float GlowIntensity = 3.0f;
 
         [Tooltip("Glow power")]

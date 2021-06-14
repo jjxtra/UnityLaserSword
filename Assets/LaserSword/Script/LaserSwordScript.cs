@@ -96,9 +96,10 @@ namespace DigitalRuby.LaserSword
                 swordBlock.SetTexture("_MainTex", Profile.BladeTexture);
             }
             swordBlock.SetColor("_TintColor", Profile.BladeColor);
+            swordBlock.SetFloat("_Intensity", Profile.BladeIntensity * percent);
             swordBlock.SetColor("_RimColor", Profile.BladeRimColor);
             swordBlock.SetFloat("_RimPower", Profile.BladeRimPower);
-            swordBlock.SetFloat("_Intensity", Profile.BladeIntensity * percent);
+            swordBlock.SetFloat("_RimIntensity", Profile.BladeRimIntensity * percent);
             BladeSwordRenderer.SetPropertyBlock(swordBlock);
 
             BladeGlowRenderer.GetPropertyBlock(glowBlock);

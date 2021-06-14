@@ -50,6 +50,8 @@
 #define CAPSULE_RADIUS_MULTIPLIER 0.35
 #define CAPSULE_LENGTH_MULTIPLIER 1.5
 #define _InvFade 0.01
+#define WM_INSTANCE_VERT(v, type, o) type o; UNITY_SETUP_INSTANCE_ID(v); UNITY_TRANSFER_INSTANCE_ID(v, o); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+#define WM_INSTANCE_FRAG(i) UNITY_SETUP_INSTANCE_ID(i); UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
 			static const float capsuleRadius = _CapsuleScale.x * CAPSULE_RADIUS_MULTIPLIER;
 			static const float capsuleLength = _CapsuleScale.y * CAPSULE_LENGTH_MULTIPLIER;
@@ -66,14 +68,12 @@
             struct appdata_vert
             {
                 float4 vertex : POSITION;
-                //float2 uv : TEXCOORD0;
             };
 
             struct v2f
             {
 				float4 vertex : SV_POSITION;
 				float3 rayDir : NORMAL;
-                //float2 uv : TEXCOORD0;
 				float3 worldPos : TEXCOORD0;
 
 
@@ -162,9 +162,9 @@
 
             v2f vert(appdata_vert v)
             {
-                v2f o;
+				WM_INSTANCE_VERT(v, v2f, o);
+
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                //o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 				o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
 				o.rayDir = o.worldPos - _WorldSpaceCameraPos;
 
@@ -180,6 +180,8 @@
 
             fixed4 frag (v2f i) : SV_Target
             {
+				WM_INSTANCE_FRAG(i);
+
 				i.rayDir = normalize(i.rayDir);
 				float intersect = CapsuleIntersect(_WorldSpaceCameraPos, i.rayDir, _CapsuleStart, _CapsuleEnd, _CapsuleRoundness);
 				float3 rayStart = _WorldSpaceCameraPos + (intersect * i.rayDir);
