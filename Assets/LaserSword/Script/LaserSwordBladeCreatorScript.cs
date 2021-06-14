@@ -261,7 +261,6 @@ namespace DigitalRuby.LaserSword
             mesh.uv = uvs;
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
-            ;
 
             BladeHeight = bladeHeight;
             BottomRadius = bottomRadius;
