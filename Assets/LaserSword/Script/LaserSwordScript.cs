@@ -24,6 +24,9 @@ namespace DigitalRuby.LaserSword
         [Tooltip("Blade glow renderer.")]
         public MeshRenderer BladeGlowRenderer;
 
+        [Tooltip("Blade sword mesh.")]
+        public MeshFilter BladeSwordMesh;
+
         [Tooltip("Light game object.")]
         public Light Light;
 
@@ -39,8 +42,7 @@ namespace DigitalRuby.LaserSword
         [Tooltip("Blade end")]
         public GameObject BladeEnd;
 
-        private LaserSwordBladeCreatorScript creationScript;
-
+        private float bladeHeight;
         private int state; // 0 = off, 1 = on, 2 = turning off, 3 = turning on
         private GameObject temporaryBladeStart;
         private float bladeDir; // 1 = up, -1 = down
@@ -55,7 +57,7 @@ namespace DigitalRuby.LaserSword
             {
                 bladeTime += Time.deltaTime;
                 float percent = Mathf.Lerp(0.01f, 1.0f, bladeTime / Profile.ActivationTime);
-                Vector3 end = temporaryBladeStart.transform.position + (Root.transform.up * bladeDir * percent * creationScript.BladeHeight);
+                Vector3 end = temporaryBladeStart.transform.position + (Root.transform.up * bladeDir * percent * bladeHeight);
                 BladeEnd.transform.position = end;
                 bladeIntensity = (state == 3 ? percent : (1.0f - percent));
 
@@ -78,7 +80,7 @@ namespace DigitalRuby.LaserSword
         private void UpdateBlade()
         {
             float distance = Vector3.Distance(BladeEnd.transform.position, BladeStart.transform.position);
-            float percent = distance / creationScript.BladeHeight;
+            float percent = distance / bladeHeight;
             BladeSwordRenderer.transform.localScale = new Vector3(1.0f, percent, 1.0f);
             if (percent < 0.01f)
             {
@@ -119,14 +121,15 @@ namespace DigitalRuby.LaserSword
             BladeGlowRenderer.transform.up = (BladeEnd.transform.position - BladeStart.transform.position).normalized;
             BladeGlowRenderer.transform.localScale = new Vector3(Profile.GlowScale, (BladeEnd.transform.position - BladeStart.transform.position).magnitude * 0.5f, Profile.GlowScale);
             Light.intensity = percent;
+            Light.color = Profile.GlowColor;
         }
 
         private void Start()
         {
             swordBlock = new MaterialPropertyBlock();
             glowBlock = new MaterialPropertyBlock();
-            creationScript = GetComponent<LaserSwordBladeCreatorScript>();
             BladeEnd.transform.position = BladeStart.transform.position;
+            bladeHeight = BladeSwordMesh.sharedMesh.bounds.extents.y * 2.0f;
         }
 
         private void Update()

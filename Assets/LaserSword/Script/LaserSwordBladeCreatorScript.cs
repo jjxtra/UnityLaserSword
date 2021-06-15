@@ -14,15 +14,15 @@ namespace DigitalRuby.LaserSword
 
         [Tooltip("The length of the blade.")]
         [Range(0.1f, 16.0f)]
-        public float BladeHeight = 2.7f;
+        public float BladeHeight = 2.73f;
         
         [Tooltip("The bottom radius.")]
         [Range(0.01f, 4.0f)]
-        public float BottomRadius = 0.25f;
+        public float BottomRadius = 0.05f;
 
         [Tooltip("The top radius.")]
         [Range(0.0f, 4.0f)]
-        public float TopRadius = 0.2f;
+        public float TopRadius = 0.04f;
 
         [Tooltip("What percent of the blade is the tip?")]
         [Range(0.0f, 1.0f)]
@@ -33,12 +33,15 @@ namespace DigitalRuby.LaserSword
         public float BladeTipRadiusPercent = 0.0f;
 
         [Range(4, 64)]
-        public int NumberOfSides = 18;
+        public int NumberOfSides = 32;
 
         private const int numberOfHeightSegments = 1;
         private const float twoPI = Mathf.PI * 2f;
 
 #if UNITY_EDITOR
+
+        [Tooltip("Click to generate mesh asset")]
+        public bool CreateMeshAsset;
 
         private Vector3[] CreateVertices()
         {
@@ -234,7 +237,6 @@ namespace DigitalRuby.LaserSword
             mesh.uv = uvs;
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
-            ;
             BladeHeight = bladeHeight;
 
             return mesh;
@@ -289,7 +291,6 @@ namespace DigitalRuby.LaserSword
                 c2.transform = Matrix4x4.TRS(new Vector3(0.0f, BladeHeight - (BladeHeight * BladeTipPercent), 0.0f), Quaternion.identity, Vector3.one);
                 bladeMesh.CombineMeshes(new CombineInstance[] { c1, c2 }, true, true);
                 bladeMesh.RecalculateBounds();
-                ;
             }
             {
                 MeshCollider c = MeshFilter.gameObject.GetComponent<MeshCollider>();
@@ -298,6 +299,13 @@ namespace DigitalRuby.LaserSword
                     c.sharedMesh = bladeMesh;
                 }
                 MeshFilter.sharedMesh = bladeMesh;
+            }
+
+            if (CreateMeshAsset)
+            {
+                CreateMeshAsset = false;
+                string filePath = "Assets/LaserSwordMesh.mesh";
+                UnityEditor.AssetDatabase.CreateAsset(Instantiate(bladeMesh), filePath);
             }
         }
 
