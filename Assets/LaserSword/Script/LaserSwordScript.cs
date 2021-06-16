@@ -59,7 +59,7 @@ namespace DigitalRuby.LaserSword
                 float percent = Mathf.Lerp(0.01f, 1.0f, bladeTime / Profile.ActivationTime);
                 Vector3 end = temporaryBladeStart.transform.position + (Root.transform.up * bladeDir * percent * bladeHeight);
                 BladeEnd.transform.position = end;
-                bladeIntensity = (state == 3 ? percent : (1.0f - percent));
+                bladeIntensity = Mathf.Pow((state == 3 ? percent : (1.0f - percent)), 0.33f);
 
                 if (bladeTime >= Profile.ActivationTime)
                 {
@@ -97,19 +97,21 @@ namespace DigitalRuby.LaserSword
             {
                 swordBlock.SetTexture("_MainTex", Profile.BladeTexture);
             }
-            swordBlock.SetColor("_TintColor", Profile.BladeColor);
-            swordBlock.SetFloat("_Intensity", Profile.BladeIntensity * percent);
+
+            float jitterBladeIntensity = percent * (1.0f + UnityEngine.Random.Range(0.0f, Profile.FlickerIntensity));
+            swordBlock.SetColor("_TintColor", Profile.BladeColor * jitterBladeIntensity);
+            swordBlock.SetFloat("_Intensity", Profile.BladeIntensity * jitterBladeIntensity);
             swordBlock.SetColor("_RimColor", Profile.BladeRimColor);
             swordBlock.SetFloat("_RimPower", Profile.BladeRimPower);
-            swordBlock.SetFloat("_RimIntensity", Profile.BladeRimIntensity * percent);
+            swordBlock.SetFloat("_RimIntensity", Profile.BladeRimIntensity * jitterBladeIntensity);
             BladeSwordRenderer.SetPropertyBlock(swordBlock);
 
             BladeGlowRenderer.GetPropertyBlock(glowBlock);
-            glowBlock.SetColor("_Color", Profile.GlowColor * bladeIntensity);
+            glowBlock.SetColor("_Color", Profile.GlowColor * jitterBladeIntensity);
             glowBlock.SetVector("_CapsuleStart", BladeStart.transform.position);
             glowBlock.SetVector("_CapsuleEnd", BladeEnd.transform.position);
             glowBlock.SetVector("_CapsuleScale", BladeGlowRenderer.transform.lossyScale);
-            glowBlock.SetFloat("_GlowIntensity", Profile.GlowIntensity);
+            glowBlock.SetFloat("_GlowIntensity", Profile.GlowIntensity * jitterBladeIntensity);
             glowBlock.SetFloat("_GlowPower", Profile.GlowPower);
             glowBlock.SetFloat("_GlowFade", Profile.GlowFade);
             glowBlock.SetFloat("_GlowLengthPower", Profile.GlowLengthPower);
@@ -120,7 +122,7 @@ namespace DigitalRuby.LaserSword
             BladeGlowRenderer.transform.position = BladeStart.transform.position + ((BladeEnd.transform.position - BladeStart.transform.position) * 0.5f);
             BladeGlowRenderer.transform.up = (BladeEnd.transform.position - BladeStart.transform.position).normalized;
             BladeGlowRenderer.transform.localScale = new Vector3(Profile.GlowScale, (BladeEnd.transform.position - BladeStart.transform.position).magnitude * 0.5f, Profile.GlowScale);
-            Light.intensity = percent;
+            Light.intensity = jitterBladeIntensity;
             Light.color = Profile.GlowColor;
         }
 
@@ -134,7 +136,6 @@ namespace DigitalRuby.LaserSword
 
         private void Update()
         {
-            Root.transform.Rotate(Profile.RotationSpeed * Time.deltaTime);
             CheckState();
             UpdateBlade();
         }

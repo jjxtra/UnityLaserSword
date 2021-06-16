@@ -75,9 +75,11 @@ namespace DigitalRuby.LaserSword
 
         [Header("Other")]
         [Tooltip("How long it takes to turn the laser sword on and off")]
-        public float ActivationTime = 0.5f;
+        [Range(0.1f, 3.0f)]
+        public float ActivationTime = 1.0f;
 
-        [Tooltip("For demo purposes, rotates the blade continously.")]
-        public Vector3 RotationSpeed = new Vector3(20.0f, 175.0f, 150.0f);
+        [Tooltip("Flicker intensity")]
+        [Range(0.0f, 0.3f)]
+        public float FlickerIntensity = 0.03f;
     }
 }
