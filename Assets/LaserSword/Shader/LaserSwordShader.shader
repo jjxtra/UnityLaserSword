@@ -12,6 +12,7 @@ Shader "LaserSword/LaserSwordShader"
 		[PerRendererData] _RimColor("Rim Color", Color) = (1, 1, 1, 1)
 		[PerRendererData] _RimPower("Rim Power", Float) = 2
 		[PerRendererData] _RimIntensity("Rim Intensity", Float) = 1
+		[PerRendererData] _InvFade("Inv Fade", Range(0.01, 3.0)) = 0.5
 	}
 
 	SubShader
@@ -32,16 +33,24 @@ Shader "LaserSword/LaserSwordShader"
 			#pragma fragment frag
 			#pragma fragmentoption ARB_precision_hint_fastest
 			#pragma multi_compile_instancing
-			
+			#pragma multi_compile_particles
+
 			#include "UnityCG.cginc"
 
-			sampler2D _MainTex;
-			float4 _MainTex_ST;
-			fixed4 _TintColor;
-			fixed _Intensity;
-			fixed4 _RimColor;
-			fixed _RimPower;
-			fixed _RimIntensity;
+			uniform sampler2D _MainTex;
+		    uniform float4 _MainTex_ST;
+			uniform fixed4 _TintColor;
+			uniform fixed _Intensity;
+			uniform fixed4 _RimColor;
+			uniform fixed _RimPower;
+			uniform fixed _RimIntensity;
+			uniform fixed _InvFade;
+
+#if defined(SOFTPARTICLES_ON)
+
+			uniform sampler2D _CameraDepthTexture;
+
+#endif
 			
 			struct appdata_t
 			{
@@ -56,6 +65,14 @@ Shader "LaserSword/LaserSwordShader"
 				float4 vertex : SV_POSITION;
 				fixed4 color : COLOR;
 				float2 texcoord : TEXCOORD0;
+
+#if defined(SOFTPARTICLES_ON)
+
+				float4 worldPos : TEXCOORD1;
+				float4 projPos : TEXCOORD2;
+
+#endif
+
 			};
 
 #define WM_INSTANCE_VERT(v, type, o) type o; UNITY_SETUP_INSTANCE_ID(v); UNITY_TRANSFER_INSTANCE_ID(v, o); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
@@ -81,6 +98,16 @@ Shader "LaserSword/LaserSwordShader"
 				fixed3 viewDir = normalize(_WorldSpaceCameraPos - WorldSpaceVertexPos(v.vertex).xyz);
 				fixed3 normalDir = normalize(WorldSpaceNormal(v.normal));
 				o.color.a = 1.0 - abs(dot(viewDir, normalDir));
+
+#if defined(SOFTPARTICLES_ON)
+
+				o.projPos = ComputeScreenPos(o.vertex);
+				COMPUTE_EYEDEPTH(o.projPos.z);
+				o.worldPos.xyz = mul(unity_ObjectToWorld, v.vertex).xyz;
+				o.worldPos.w = distance(_WorldSpaceCameraPos, o.worldPos.xyz);
+
+#endif
+
 				return o;
 			}
 
@@ -91,7 +118,20 @@ Shader "LaserSword/LaserSwordShader"
 				fixed rim = i.color.a;
 				fixed3 rimLight = _RimIntensity * pow(rim, _RimPower) * _RimColor.rgb;
 				fixed3 col = tex2D(_MainTex, i.texcoord).rgb * i.color.rgb * _TintColor.rgb * _Intensity;
-				return fixed4(col + rimLight, 1.0);
+				col += rimLight;
+
+#if defined(SOFTPARTICLES_ON)
+
+				float sceneZ = LinearEyeDepth(UNITY_SAMPLE_DEPTH(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos))));
+				float partZ = i.projPos.z;
+				float fade = saturate(_InvFade * min(partZ * partZ * partZ, (sceneZ - partZ)));
+				return fixed4(col, fade);
+#else
+
+				return fixed4(col, 1.0);
+
+#endif
+
 			}
 
 			ENDCG 

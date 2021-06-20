@@ -44,7 +44,12 @@
 			uniform fixed _GlowDither;
 			uniform fixed _GlowMax;
 			uniform fixed _GlowInvFade;
+
+#if defined(SOFTPARTICLES_ON)
+
 			uniform sampler2D _CameraDepthTexture;
+
+#endif
 
 			static const float3 capsuleDir = normalize(_CapsuleStart - _CapsuleEnd);
 			static const float3 capsuleCenter = (_CapsuleStart + _CapsuleEnd) * 0.5;
@@ -89,8 +94,9 @@
 				float c = baba * oaoa - baoa * baoa - r * r*baba;
 				float h = b * b - a * c;
 
-				UNITY_BRANCH
-				if (h >= 0.0)
+				// optimization - we know we hit the capsule
+				//UNITY_BRANCH
+				//if (h >= 0.0)
 				{
 					float t = (-b - sqrt(h)) / a;
 					float y = baoa + t * bard;
@@ -109,21 +115,22 @@
 						c = dot(oc, oc) - r * r;
 						h = b * b - c;
 
-						UNITY_BRANCH
-						if (h > 0.0)
+						// optimization - we know we hit the capsule
+						//UNITY_BRANCH
+						//if (h > 0.0)
 						{
 							h = -b - sqrt(h);
 						}
-						else
-						{
-							h = 0.0;
-						}
+						//else
+						//{
+							//h = 0.0;
+						//}
 					}
 				}
-				else
-				{
-					h = 0.0;
-				}
+				//else
+				//{
+					//h = 0.0;
+				//}
 
 				// h is distance to capsule
 				return h;
@@ -203,19 +210,19 @@
 				fixed lineDist = (lineDist1 + lineDist2 + lineDist3) * 0.3333;
 				fixed centerDist = pow(1.0 - saturate(capsuleHeightHalf * distance(avgPos, capsuleCenter)), _GlowCenterFalloff);
 
-				intersect = min(1.0, lineDist * centerDist);
-				intersect = pow(intersect * dither, _GlowFalloff);
+				intersect = min(1.0, lineDist * centerDist * dither);
+				intersect = pow(intersect, _GlowFalloff);
 				intersect = min(intersect * _GlowIntensity, _GlowMax);
 
 #if defined(SOFTPARTICLES_ON)
 
 				float sceneZ = LinearEyeDepth(UNITY_SAMPLE_DEPTH(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos))));
 				float partZ = i.projPos.z;
-				intersect *= saturate(_GlowInvFade * (sceneZ - partZ));
+				intersect *= saturate(_GlowInvFade * min(partZ * partZ * partZ, (sceneZ - partZ)));
 
 #endif
 
-				return fixed4(_Color * intersect, 1.0);
+				return fixed4(_Color * intersect, 0.0);
             }
             ENDCG
         }

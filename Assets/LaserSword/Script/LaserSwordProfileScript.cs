@@ -32,11 +32,11 @@ namespace DigitalRuby.LaserSword
         public Color GlowColor = Color.red;
 
         [Tooltip("Glow intensity")]
-        [Range(0.0f, 10.0f)]
+        [Range(0.0f, 100.0f)]
         public float GlowIntensity = 3.0f;
 
         [Tooltip("Glow falloff, control power of glow")]
-        [Range(0.0f, 8.0f)]
+        [Range(0.0f, 64.0f)]
         public float GlowFalloff = 1.5f;
 
         [Tooltip("Glow center falloff, control glow further from center of blade")]
@@ -48,7 +48,7 @@ namespace DigitalRuby.LaserSword
         public float GlowDither = 0.1f;
 
         [Tooltip("Glow max")]
-        [Range(0.0f, 3.0f)]
+        [Range(0.0f, 10.0f)]
         public float GlowMax = 1.0f;
 
         [Tooltip("Glow scale / width")]
