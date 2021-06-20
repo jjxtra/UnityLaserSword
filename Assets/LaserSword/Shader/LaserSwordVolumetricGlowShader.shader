@@ -5,17 +5,15 @@
 		[PerRendererData] _Color("Color", Color) = (1.0, 1.0, 1.0, 1.0)
 		[PerRendererData] _CapsuleStart("Start", Vector) = (0.0, 0.0, 0.0, 0.0)
 		[PerRendererData] _CapsuleEnd("End", Vector) = (0.0, 10.0, 0.0, 0.0)
-		[PerRendererData] _CapsuleScale("Scale", Vector) = (1.0, 1.0, 1.0, 1.0)
-		[PerRendererData] _CapsuleRoundness("Roundness", Range(0.0, 1.0)) = 0.5
+		[PerRendererData] _CapsuleRadius("Radius", Float) = 0.5
 		[PerRendererData] _GlowIntensity("Intensity", Range(0.0, 10.0)) = 3.0
-		[PerRendererData] _GlowPower("Glow Power", Range(0.0, 8.0)) = 1.5
-		[PerRendererData] _GlowFade("Glow Fade", Range(0.0, 4.0)) = 2.0
-		[PerRendererData] _GlowLengthPower("Glow Length Power", Range(0.0, 3.0)) = 0.35
-		[PerRendererData] _GlowDither("Glow Power", Range(0.0, 1.0)) = 0.1
-		[PerRendererData] _GlowMaxRayLength("Glow Power", Range(0.0, 10.0)) = 1.5
+		[PerRendererData] _GlowFalloff("Glow Power", Range(0.01, 8.0)) = 1.5
+		[PerRendererData] _GlowCenterFalloff("Glow Center Power", Range(0.01, 1.0)) = 0.15
+		[PerRendererData] _GlowDither("Glow Dither", Range(0.0, 1.0)) = 0.1
 		[PerRendererData] _GlowMax("Max Glow", Range(0.0, 3.0)) = 1.0
+		[PerRendererData] _GlowInvFade("Glow inv fade", Range(0.0, 3.0)) = 0.5
 	}
-		SubShader
+	SubShader
 	{
 		Tags{ "RenderType" = "Transparent" "IgnoreProjector" = "True" "Queue" = "Transparent+1" "LightMode" = "Always" "PreviewType" = "Plane" }
 
@@ -29,41 +27,31 @@
 
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma fragmentoption ARB_precision_hint_fastest
+			#pragma multi_compile_instancing
+			#pragma multi_compile_particles
 
 			#include "UnityCG.cginc"
 
 			uniform fixed3 _Color;
-			uniform float3 _CapsuleStart;
+			uniform float3 _CapsuleStart; 
 			uniform float3 _CapsuleEnd;
-			uniform float3 _CapsuleScale;
-			uniform float _CapsuleRoundness;
+			uniform float _CapsuleRadius;
+			uniform float _CapsuleRadiusInv;
 			uniform fixed _GlowIntensity;
-			uniform fixed _GlowPower;
-			uniform fixed _GlowFade;
-			uniform fixed _GlowLengthPower;
+			uniform fixed _GlowFalloff;
+			uniform fixed _GlowCenterFalloff;
 			uniform fixed _GlowDither;
-			uniform fixed _GlowMaxRayLength;
 			uniform fixed _GlowMax;
-			
-#define CAPSULE_RAY_MARCH_COUNT 4
-#define CAPSULE_RAY_MARCH_COUNT_INV (1.0 / float(CAPSULE_RAY_MARCH_COUNT))
-#define CAPSULE_RADIUS_MULTIPLIER 0.35
-#define CAPSULE_LENGTH_MULTIPLIER 1.5
-#define _InvFade 0.01
+			uniform fixed _GlowInvFade;
+			uniform sampler2D _CameraDepthTexture;
+
+			static const float3 capsuleDir = normalize(_CapsuleStart - _CapsuleEnd);
+			static const float3 capsuleCenter = (_CapsuleStart + _CapsuleEnd) * 0.5;
+			static const float capsuleHeightHalf = 1.0 / (distance(_CapsuleStart, _CapsuleEnd) * 0.5);
+
 #define WM_INSTANCE_VERT(v, type, o) type o; UNITY_SETUP_INSTANCE_ID(v); UNITY_TRANSFER_INSTANCE_ID(v, o); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 #define WM_INSTANCE_FRAG(i) UNITY_SETUP_INSTANCE_ID(i); UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
-
-			static const float capsuleRadius = _CapsuleScale.x * CAPSULE_RADIUS_MULTIPLIER;
-			static const float capsuleLength = _CapsuleScale.y * CAPSULE_LENGTH_MULTIPLIER;
-			static const float3 capsuleDir = normalize(_CapsuleEnd - _CapsuleStart);
-			static const float3 capsuleCenter = (_CapsuleEnd + _CapsuleStart) * 0.5;
-
-#if defined(SOFTPARTICLES_ON)
-
-			fixed _InvFade;
-			sampler2D _CameraDepthTexture;
-
-#endif
 
             struct appdata_vert
             {
@@ -74,8 +62,7 @@
             {
 				float4 vertex : SV_POSITION;
 				float3 rayDir : NORMAL;
-				float3 worldPos : TEXCOORD0;
-
+				float4 worldPos : TEXCOORD0;
 
 #if defined(SOFTPARTICLES_ON)
 
@@ -101,26 +88,45 @@
 				float b = baba * rdoa - baoa * bard;
 				float c = baba * oaoa - baoa * baoa - r * r*baba;
 				float h = b * b - a * c;
+
+				UNITY_BRANCH
 				if (h >= 0.0)
 				{
 					float t = (-b - sqrt(h)) / a;
-
 					float y = baoa + t * bard;
 
-					// body
-					if (y > 0.0 && y < baba) return t;
-
-					// caps
-					float3 oc = (y <= 0.0) ? oa : ro - pb;
-					b = dot(rd, oc);
-					c = dot(oc, oc) - r * r;
-					h = b * b - c;
-					if (h > 0.0)
+					UNITY_BRANCH
+					if (y > 0.0 && y < baba)
 					{
-						return -b - sqrt(h);
+						// body
+						h = t;
+					}
+					else
+					{
+						// caps
+						float3 oc = (y <= 0.0) ? oa : ro - pb;
+						b = dot(rd, oc);
+						c = dot(oc, oc) - r * r;
+						h = b * b - c;
+
+						UNITY_BRANCH
+						if (h > 0.0)
+						{
+							h = -b - sqrt(h);
+						}
+						else
+						{
+							h = 0.0;
+						}
 					}
 				}
-				return -1.0;
+				else
+				{
+					h = 0.0;
+				}
+
+				// h is distance to capsule
+				return h;
 			}
 
 			inline float RandomFloat(float3 v)
@@ -165,7 +171,8 @@
 				WM_INSTANCE_VERT(v, v2f, o);
 
                 o.vertex = UnityObjectToClipPos(v.vertex);
-				o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+				o.worldPos.xyz = mul(unity_ObjectToWorld, v.vertex).xyz;
+				o.worldPos.w = distance(_WorldSpaceCameraPos, o.worldPos.xyz);
 				o.rayDir = o.worldPos - _WorldSpaceCameraPos;
 
 #if defined(SOFTPARTICLES_ON)
@@ -183,36 +190,31 @@
 				WM_INSTANCE_FRAG(i);
 
 				i.rayDir = normalize(i.rayDir);
-				float intersect = CapsuleIntersect(_WorldSpaceCameraPos, i.rayDir, _CapsuleStart, _CapsuleEnd, _CapsuleRoundness);
-				float3 rayStart = _WorldSpaceCameraPos + (intersect * i.rayDir);
-				float3 rayEnd = i.worldPos;
-				intersect = min(_GlowMaxRayLength, distance(rayStart, rayEnd));
-				float3 rayMarch = (rayEnd - rayStart) * CAPSULE_RAY_MARCH_COUNT_INV;
-				float dist = 0.0;
+				fixed dither = (1.0 + (_GlowDither * RandomFloat(i.rayDir)));
+				float toCapsule = CapsuleIntersect(_WorldSpaceCameraPos, i.rayDir, _CapsuleStart, _CapsuleEnd, _CapsuleRadius);
+				float intersect = i.worldPos.w - toCapsule;
+				float3 startPos = _WorldSpaceCameraPos + (i.rayDir * toCapsule);
+				float3 endPos = startPos + (i.rayDir * intersect);
+				float3 avgPos = (startPos + endPos) * 0.5;
+				float3 offset = (i.rayDir * intersect * 0.25);
+				fixed lineDist1 = 1.0 - (_CapsuleRadiusInv * LinePointDistance(_CapsuleStart, capsuleDir, avgPos));
+				fixed lineDist2 = 1.0 - (_CapsuleRadiusInv * LinePointDistance(_CapsuleStart, capsuleDir, startPos + offset));
+				fixed lineDist3 = 1.0 - (_CapsuleRadiusInv * LinePointDistance(_CapsuleStart, capsuleDir, endPos - offset));
+				fixed lineDist = (lineDist1 + lineDist2 + lineDist3) * 0.3333;
+				fixed centerDist = pow(1.0 - saturate(capsuleHeightHalf * distance(avgPos, capsuleCenter)), _GlowCenterFalloff);
 
-				// ray march through glow volume
-				UNITY_LOOP
-				for (uint i = 0; i < CAPSULE_RAY_MARCH_COUNT; i++)
-				{
-					fixed dither = (1.0 + (_GlowDither * RandomFloat(rayStart)));
-					fixed distanceFromCenterLineSquared = LinePointDistanceSquared(_CapsuleStart, capsuleDir, rayStart);
-					fixed lenPower = pow((capsuleLength - distance(rayStart, capsuleCenter)), _GlowLengthPower);
-					dist += saturate(dither * (capsuleRadius - distanceFromCenterLineSquared) * lenPower);
-					rayStart += (rayMarch * dither);
-				}
-				dist *= CAPSULE_RAY_MARCH_COUNT_INV;
-				dist = pow(dist, _GlowPower);
+				intersect = min(1.0, lineDist * centerDist);
+				intersect = pow(intersect * dither, _GlowFalloff);
+				intersect = min(intersect * _GlowIntensity, _GlowMax);
 
 #if defined(SOFTPARTICLES_ON)
 
 				float sceneZ = LinearEyeDepth(UNITY_SAMPLE_DEPTH(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.projPos))));
 				float partZ = i.projPos.z;
-				dist *= saturate(_InvFade * (sceneZ - partZ));
+				intersect *= saturate(_GlowInvFade * (sceneZ - partZ));
 
 #endif
 
-				intersect = min(_GlowMax, intersect * dist * _GlowIntensity);
-				intersect = pow(intersect, _GlowFade);
 				return fixed4(_Color * intersect, 1.0);
             }
             ENDCG

@@ -28,40 +28,31 @@ namespace DigitalRuby.LaserSword
         public float BladeRimIntensity = 1.0f;
 
         [Header("Glow")]
-        [Tooltip("Laser sword glow color")]
+        [Tooltip("Glow color")]
         public Color GlowColor = Color.red;
 
         [Tooltip("Glow intensity")]
         [Range(0.0f, 10.0f)]
         public float GlowIntensity = 3.0f;
 
-        [Tooltip("Glow power")]
+        [Tooltip("Glow falloff, control power of glow")]
         [Range(0.0f, 8.0f)]
-        public float GlowPower = 1.5f;
+        public float GlowFalloff = 1.5f;
 
-        [Tooltip("Glow fade")]
-        [Range(0.0f, 4.0f)]
-        public float GlowFade = 2.0f;
-
-        [Tooltip("Glow length power")]
-        [Range(0.0f, 4.0f)]
-        public float GlowLengthPower = 0.35f;
+        [Tooltip("Glow center falloff, control glow further from center of blade")]
+        [Range(0.01f, 1.0f)]
+        public float GlowCenterFalloff = 0.15f;
 
         [Tooltip("Glow dither")]
         [Range(0.0f, 1.0f)]
         public float GlowDither = 0.1f;
-
-        [Tooltip("Glow max ray length")]
-        [Range(1.0f, 10.0f)]
-        public float GlowMaxRayLength = 1.5f;
 
         [Tooltip("Glow max")]
         [Range(0.0f, 3.0f)]
         public float GlowMax = 1.0f;
 
         [Tooltip("Glow scale / width")]
-        [Range(0.0f, 2.0f)]
-        public float GlowScale = 1.0f;
+        public Vector3 GlowScale = new Vector3(0.35f, 1.5f, 0.35f);
 
         [Header("Audio")]
         [Tooltip("Sound to play when the laser sword turns on")]
